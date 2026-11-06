@@ -29,8 +29,9 @@ CFG_PATH = OPS / "config.toml"
 # 出现即中止推送的路径前缀（防泄露最后一道闸）
 FORBIDDEN_PREFIXES = (".workbuddy/", "_ops/logs/", "_ops/state/")
 
-# 定位到的 git 可执行文件，main() 里初始化
+# 定位到的 git / ssh 可执行文件，run() 里初始化
 GIT_BIN = "git"
+SSH_BIN = ""
 
 
 def resolve_git(cfg=None):
@@ -81,6 +82,36 @@ def resolve_git(cfg=None):
     return ""
 
 
+def resolve_ssh(cfg=None):
+    """定位 ssh.exe。SSH 推送不受凭据管理器影响，是自动化最稳的通道。
+
+    顺序：配置指定 -> PATH -> WorkBuddy PortableGit 的 usr/bin/ssh.exe。
+    找不到也不致命：https 远端照旧能走 GCM。
+    """
+    try:
+        explicit = (cfg or {}).get("git", {}).get("ssh_executable", "") or ""
+    except Exception:
+        explicit = ""
+    if explicit:
+        p = Path(os.path.expandvars(os.path.expanduser(explicit)))
+        if p.is_file():
+            return str(p)
+
+    found = shutil.which("ssh")
+    if found:
+        return found
+
+    base = Path.home() / ".workbuddy" / "binaries" / "PortableGit" / "versions"
+    for pat in ("*/usr/bin/ssh.exe", "*/bin/ssh.exe"):
+        try:
+            hits = sorted(base.glob(pat))
+            if hits:
+                return str(hits[-1])
+        except Exception:
+            pass
+    return ""
+
+
 def now():
     return datetime.datetime.now()
 
@@ -105,6 +136,11 @@ def git(args, proxy=None, timeout=120):
     env["GIT_TERMINAL_PROMPT"] = "0"
     env["GCM_INTERACTIVE"] = "never"
     env["GIT_ASKPASS"] = "echo"
+    # SSH 通道：指定 ssh 绝对路径（计划任务里 PATH 没有 ssh），
+    # BatchMode 保证绝不交互提问，accept-new 避免首次连接卡在 yes/no。
+    if SSH_BIN:
+        env["GIT_SSH_COMMAND"] = (
+            '"{}" -o BatchMode=yes -o StrictHostKeyChecking=accept-new'.format(SSH_BIN))
     cmd = [GIT_BIN, "-c", "core.quotepath=false"]
     if proxy:
         cmd += ["-c", "http.proxy=" + proxy, "-c", "https.proxy=" + proxy]
@@ -198,13 +234,16 @@ def push_remote(r, branch, cfg, fh):
         log("[{}] 第 {}/{} 次推送失败（{:.1f}s）：{}".format(
             name, i + 1, attempts, cost, out.splitlines()[0] if out else "无输出"), fh)
 
-        # 凭据问题不是瞬时故障，重试没有意义，直接停手
+        # 凭据/密钥问题不是瞬时故障，重试没有意义，直接停手
         low = out.lower()
         if any(k in low for k in ("authentication failed", "could not read username",
                                   "terminal prompts disabled", "permission denied",
                                   "403 forbidden", "401 unauthorized", "repository not found")):
-            log("[{}] 凭据缺失或无效，已跳过剩余重试。".format(name), fh)
-            log("[{}] 处理：在交互式终端手动推送一次保存凭据，见 _ops/README.md".format(name), fh)
+            log("[{}] 凭据/密钥缺失或无效，已跳过剩余重试。".format(name), fh)
+            if url.startswith("git@"):
+                log("[{}] 处理：把 ~/.ssh/id_ed25519.pub 的公钥添加到该平台，见 _ops/README.md".format(name), fh)
+            else:
+                log("[{}] 处理：改用 SSH 远端，或手动推送一次保存凭据，见 _ops/README.md".format(name), fh)
             break
 
         if i < attempts - 1:
@@ -216,17 +255,20 @@ def push_remote(r, branch, cfg, fh):
 
 
 def run(fh):
-    global GIT_BIN
+    global GIT_BIN, SSH_BIN
 
     with open(CFG_PATH, "rb") as f:
         cfg = tomllib.load(f)
 
-    # --- 0. 定位 git（不依赖 PATH，计划任务环境里通常没有）---
+    # --- 0. 定位 git / ssh（不依赖 PATH，计划任务环境里通常都没有）---
     GIT_BIN = resolve_git(cfg)
     if not GIT_BIN:
         log("未找到 git 可执行文件。请在 _ops/config.toml 的 [git] executable 里填绝对路径", fh)
         return
     log("使用 git：" + GIT_BIN, fh)
+
+    SSH_BIN = resolve_ssh(cfg)
+    log("使用 ssh：" + (SSH_BIN or "未找到（SSH 远端将不可用，https 远端不受影响）"), fh)
 
     if not (ROOT / ".git").exists():
         log("仓库未初始化（缺少 .git），请先执行 git init", fh)
