@@ -42,17 +42,33 @@ ssh_executable = "G:\\app\\Git\\usr\\bin\\ssh.exe"
 
 ## 接入每日定时任务
 
-用**独立的 Windows 计划任务**，比正文任务晚 30 分钟，彻底解耦：
+**方式是挂在每日正文任务本身的最后一步**，不另开 Windows 计划任务。
 
-```powershell
-schtasks /create /tn "WB-HistoryDaily-Sync" ^
-  /tr "\"C:\Users\ck108\.workbuddy\binaries\python\envs\default\Scripts\python.exe\" \"C:\Users\ck108\WorkBuddy\automation-2026-07-01-10-57-52\_ops\sync.py\"" ^
-  /sc daily /st 06:00 /f
+WorkBuddy 的自动化任务 `历史上的今天`（每日 07:00）的 prompt 末尾已有第 6 步：
+
+```
+cd /c/Users/ck108/WorkBuddy/automation-2026-07-01-10-57-52
+"C:/Users/ck108/.workbuddy/binaries/python/envs/default/Scripts/python.exe" _ops/sync.py
 ```
 
-删除：`schtasks /delete /tn "WB-HistoryDaily-Sync" /f`
+这样接的理由：**没有新正文就没有推送的必要**。正文生成失败的那天，本来也没有可推的东西；另开一个定时任务反而会在空跑时制造无意义的活动。
 
-> 首次推送前必须在**交互式终端**里手动跑一次，确认认证已通过。计划任务是非交互式的，届时不会弹窗要密码——凭据没准备好就会静默失败（但 commit 会留在本地，下次自动补推）。
+代价与兜底：假如某天正文生成了但推送失败（断网等），那天不会有重试。但 commit 已经落在本地，**第二天一旦推送成功，会把积压的提交一起带上去**，不会丢。日志里会留痕，两天后仍未成功才需要人工看一眼。
+
+### 手工补推
+
+任何时候想立刻同步（例如改完配置）：
+
+```powershell
+cd C:\Users\ck108\WorkBuddy\automation-2026-07-01-10-57-52
+& "C:\Users\ck108\.workbuddy\binaries\python\envs\default\Scripts\python.exe" _ops\sync.py
+```
+
+GitHub 单独失败想补一次：
+
+```powershell
+git push github main
+```
 
 ## 认证方式：SSH（推荐，已启用）
 
@@ -67,7 +83,7 @@ schtasks /create /tn "WB-HistoryDaily-Sync" ^
 | Gitee 认证 | ✅ 实测 `Hi Vickrs(@vickrs)! You've successfully authenticated` |
 | GitHub 认证 | ✅ 实测 `Hi VIckrs325! You've successfully authenticated`（账号名是 `VIckrs325`，大写 I） |
 
-`sync.py` 运行时会自动定位 `ssh.exe`（计划任务的 PATH 里没有），并注入：
+`sync.py` 运行时会自动定位 `ssh.exe`（自动化任务的环境里 PATH 可能不含 Git 目录），并注入：
 
 ```
 GIT_SSH_COMMAND="<ssh路径>" -o BatchMode=yes -o StrictHostKeyChecking=accept-new
