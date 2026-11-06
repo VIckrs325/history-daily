@@ -48,20 +48,52 @@ schtasks /create /tn "WB-HistoryDaily-Sync" ^
 
 删除：`schtasks /delete /tn "WB-HistoryDaily-Sync" /f`
 
-> 首次推送前必须在**交互式终端**里手动跑一次并输入令牌，让 Windows 凭据管理器记住它。计划任务是非交互式的，届时不会弹窗要密码——没存过就会静默失败。
+> 首次推送前必须在**交互式终端**里手动跑一次，确认认证已通过。计划任务是非交互式的，届时不会弹窗要密码——凭据没准备好就会静默失败（但 commit 会留在本地，下次自动补推）。
 
-## 首次配置凭据（只需一次）
+## 认证方式：SSH（推荐，已启用）
 
-`sync.py` 在运行时会把 `GIT_TERMINAL_PROMPT=0`、`GCM_INTERACTIVE=never`、`GIT_ASKPASS=echo` 传给 git，**所以自动化运行永远不会弹凭据窗口**——拿不到凭据就直接失败写日志，下次运行自动补推。
+远端地址现在用 SSH 形式 `git@gitee.com:vickrs/history-daily.git`。**SSH 是无人值守场景唯一可靠的通道**：不需要令牌、不走凭据管理器、永不弹窗，密钥认证在非交互式环境下也能直接通过。
 
-凭据必须先在交互式终端存一次：
+已生成并验证的密钥：
 
-```powershell
-cd C:\Users\ck108\WorkBuddy\automation-2026-07-01-10-57-52
-& "C:\Users\ck108\.workbuddy\binaries\PortableGit\versions\1.3.0\cmd\git.exe" push -u origin main
+| 项 | 值 |
+|---|---|
+| 私钥 | `C:\Users\ck108\.ssh\id_ed25519` |
+| 公钥 | `C:\Users\ck108\.ssh\id_ed25519.pub`（注释为 `Gitee SSH Key`） |
+| Gitee 认证 | ✅ 实测 `Hi Vickrs(@vickrs)! You've successfully authenticated` |
+| GitHub 认证 | ❌ 公钥尚未加到 GitHub 账号，报 `Permission denied (publickey)` |
+
+`sync.py` 运行时会自动定位 `ssh.exe`（计划任务的 PATH 里没有），并注入：
+
+```
+GIT_SSH_COMMAND="<ssh路径>" -o BatchMode=yes -o StrictHostKeyChecking=accept-new
 ```
 
-弹窗里填：
+`BatchMode=yes` 保证绝不交互提问，`accept-new` 避免首次连接卡在 yes/no 提示上。
+
+### 给 GitHub 镜像加同一把公钥
+
+同一把密钥可以同时注册到多个平台，不需要再生成新的：
+
+```powershell
+Get-Content C:\Users\ck108\.ssh\id_ed25519.pub
+```
+
+把输出整行复制，粘贴到 GitHub → Settings → SSH and GPG keys → New SSH key。
+
+然后编辑 `_ops/config.toml`，把 GitHub 远端的 `REPLACE_ME` 换成你的 GitHub 用户名，`enabled` 改 `true`。
+
+验证是否生效（不会推送，只测认证）：
+
+```powershell
+& "C:\Users\ck108\.workbuddy\binaries\PortableGit\versions\1.3.0\usr\bin\ssh.exe" -T git@github.com
+```
+
+成功时返回 `Hi <用户名>! You've successfully authenticated...`。
+
+### 备用：HTTPS + 私人令牌
+
+若 SSH 不可用，把 `url` 改回 `https://gitee.com/vickrs/history-daily.git`，然后在交互式终端手动推送一次、弹窗里填：
 
 - 用户名：`vickrs`
 - 密码：**Gitee 私人令牌**（不是登录密码）。Gitee → 头像 → 设置 → 安全设置 → 私人令牌 → 生成新令牌，勾选 `projects` 权限
@@ -79,5 +111,5 @@ cd C:\Users\ck108\WorkBuddy\automation-2026-07-01-10-57-52
 
 ## 已知限制
 
-- **GitHub 镜像当前不可用**：本机 `github.com` 直连被阻断（`Connection reset`），原 WorkBuddy 代理端口 `127.0.0.1:56117` 已失效。`config.toml` 里 GitHub 远端默认 `enabled = false`。等有稳定代理后填上 `proxy` 再打开即可；此前的 commit 会留在本地，恢复后自动补推，不会丢。
+- **GitHub 镜像待启用**：SSH 到 GitHub 网络可达（22 端口通，主机指纹 `SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU` 已与官方核对一致），但公钥还没加到 GitHub 账号，认证报 `Permission denied (publickey)`。`config.toml` 里 GitHub 远端默认 `enabled = false`。加好公钥后改 `enabled = true` 即可；此前的 commit 会留在本地，恢复后自动补推，不会丢。
 - **不做压缩包归档**：日均正文 3 KB，git 历史十年不足 30 MB，远低于平台限额。若将来接入影像/大文件输出，再启用按月打包 + 本地容量管控。
