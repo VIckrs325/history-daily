@@ -19,22 +19,26 @@
 
 退出码恒为 0。看结果要看日志或 stdout，不要看退出码。
 
-## 关于 git 不在 PATH 上
+## git 与 ssh 的定位
 
-本机的 git 是 WorkBuddy 内置的 PortableGit，**没有加入系统 PATH**，所以 PowerShell 里直接敲 `git` 会报「无法识别」。这不影响自动化——`sync.py` 会自己找：
+本机装了两套 git：
 
-1. `config.toml` 里 `[git] executable` 指定的路径
-2. 系统 PATH
-3. WorkBuddy 内置 PortableGit（`~/.workbuddy/binaries/PortableGit/versions/*/cmd/git.exe`，取最新版本目录）
-4. `Program Files\Git`、`%LOCALAPPDATA%\Programs\Git`
+| 来源 | 路径 | 用途 |
+|---|---|---|
+| 全局安装（2026-11-06 装，2.56.0.windows.4） | `G:\app\Git\cmd\git.exe` | **手动操作与自动化统一用这套** |
+| WorkBuddy 内置 PortableGit | `~\.workbuddy\binaries\PortableGit\versions\*\cmd\git.exe` | WorkBuddy 自用，不要删、不要依赖 |
 
-只有手动操作时需要完整路径：
+`config.toml` 的 `[git]` 段已把两套路径**写死**，而不是靠 PATH 自动探测。原因：不同运行环境（交互式终端 / 计划任务 / 编辑器内嵌终端）的 PATH 排序不同，会自动选中不同的 git，行为不可复现。写死后走到哪都是同一套。
 
-```powershell
-& "C:\Users\ck108\.workbuddy\binaries\PortableGit\versions\1.3.0\cmd\git.exe" push -u origin main
+```toml
+[git]
+executable     = "G:\\app\\Git\\cmd\\git.exe"
+ssh_executable = "G:\\app\\Git\\usr\\bin\\ssh.exe"
 ```
 
-若想让 `git` 命令长期可用，把上面 `\cmd` 目录加进用户 PATH 即可（注意 WorkBuddy 升级后版本目录名可能变，届时需要改）。
+若将来换了安装位置，改这两行即可。留空则退回自动探测顺序：配置 → PATH → 内置 PortableGit → `Program Files\Git`。
+
+手动敲命令现在直接用 `git` 就行（`G:\app\Git\cmd` 已在系统 PATH 里）。
 
 ## 接入每日定时任务
 
@@ -86,7 +90,7 @@ Get-Content C:\Users\ck108\.ssh\id_ed25519.pub
 验证是否生效（不会推送，只测认证）：
 
 ```powershell
-& "C:\Users\ck108\.workbuddy\binaries\PortableGit\versions\1.3.0\usr\bin\ssh.exe" -T git@github.com
+& "G:\app\Git\usr\bin\ssh.exe" -T git@github.com
 ```
 
 成功时返回 `Hi <用户名>! You've successfully authenticated...`。
