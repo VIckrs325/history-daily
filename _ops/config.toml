@@ -28,6 +28,7 @@ ssh_executable = "G:\\app\\Git\\usr\\bin\\ssh.exe"
 paths = [
     "历史上的今天-*.md",
     "README.md",
+    "LICENSE",
     ".gitignore",
     "_ops/config.toml",
     "_ops/sync.py",

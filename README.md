@@ -42,3 +42,9 @@ git checkout <commit> -- 历史上的今天-2026-08-06.md
 
 - Gitee：https://gitee.com/vickrs/history-daily
 - GitHub：https://github.com/VIckrs325/history-daily
+
+## 授权
+
+[MIT](LICENSE) © 2026 Vickrs
+
+正文中引用的史实、日期与结论均来自公开史料（人民网党史频道、中央党史和文献研究院、NASA 等），页面末尾逐条标注来源；事实本身不受著作权保护，此处授权仅针对文字组织与整理工作。
