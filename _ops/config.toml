@@ -54,9 +54,9 @@ required = true
 name    = "github"
 # SSH 认证已打通：实测返回 "Hi VIckrs325! You've successfully authenticated"。
 # 注意 GitHub 用户名是 VIckrs325（大写 I），不是 Vickrs。
-# 仓库建好后把 enabled 改为 true 即开始同步。
+# 仓库已建（空仓），2026-11-07 首次推送成功。
 url     = "git@github.com:VIckrs325/history-daily.git"
-enabled = false
+enabled = true
 proxy   = ""
 required = false
 
