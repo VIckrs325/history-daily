@@ -65,7 +65,7 @@ schtasks /create /tn "WB-HistoryDaily-Sync" ^
 | 私钥 | `C:\Users\ck108\.ssh\id_ed25519` |
 | 公钥 | `C:\Users\ck108\.ssh\id_ed25519.pub`（注释为 `Gitee SSH Key`） |
 | Gitee 认证 | ✅ 实测 `Hi Vickrs(@vickrs)! You've successfully authenticated` |
-| GitHub 认证 | ❌ 公钥尚未加到 GitHub 账号，报 `Permission denied (publickey)` |
+| GitHub 认证 | ✅ 实测 `Hi VIckrs325! You've successfully authenticated`（账号名是 `VIckrs325`，大写 I） |
 
 `sync.py` 运行时会自动定位 `ssh.exe`（计划任务的 PATH 里没有），并注入：
 
@@ -75,25 +75,23 @@ GIT_SSH_COMMAND="<ssh路径>" -o BatchMode=yes -o StrictHostKeyChecking=accept-n
 
 `BatchMode=yes` 保证绝不交互提问，`accept-new` 避免首次连接卡在 yes/no 提示上。
 
-### 给 GitHub 镜像加同一把公钥
+### 双远端状态（2026-11-07 已全部打通）
 
-同一把密钥可以同时注册到多个平台，不需要再生成新的：
+同一把密钥 `id_ed25519` 同时注册在 Gitee 和 GitHub，无需第二把：
+
+| 远端 | 地址 | 状态 |
+|---|---|---|
+| Gitee（origin） | `git@gitee.com:vickrs/history-daily.git` | ✅ 主库，`required = true` |
+| GitHub（github） | `git@github.com:VIckrs325/history-daily.git` | ✅ 镜像，`required = false` |
+
+GitHub 仓库必须是**空仓**（建仓时不要勾 README / .gitignore / license），否则首次推送会因历史不相关被拒。
+
+日常手工推送（两个远端）：
 
 ```powershell
-Get-Content C:\Users\ck108\.ssh\id_ed25519.pub
+git push origin main
+git push github main
 ```
-
-把输出整行复制，粘贴到 GitHub → Settings → SSH and GPG keys → New SSH key。
-
-然后编辑 `_ops/config.toml`，把 GitHub 远端的 `REPLACE_ME` 换成你的 GitHub 用户名，`enabled` 改 `true`。
-
-验证是否生效（不会推送，只测认证）：
-
-```powershell
-& "G:\app\Git\usr\bin\ssh.exe" -T git@github.com
-```
-
-成功时返回 `Hi <用户名>! You've successfully authenticated...`。
 
 ### 备用：HTTPS + 私人令牌
 
@@ -115,5 +113,6 @@ Get-Content C:\Users\ck108\.ssh\id_ed25519.pub
 
 ## 已知限制
 
-- **GitHub 镜像待启用**：SSH 到 GitHub 网络可达（22 端口通，主机指纹 `SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU` 已与官方核对一致），但公钥还没加到 GitHub 账号，认证报 `Permission denied (publickey)`。`config.toml` 里 GitHub 远端默认 `enabled = false`。加好公钥后改 `enabled = true` 即可；此前的 commit 会留在本地，恢复后自动补推，不会丢。
+- **GitHub 推送比 Gitee 慢**：实测 Gitee 1.6s、GitHub 6.4s。两者串行执行，整体仍在 10s 内。GitHub 侧若失败只记 WARN、不重试（`required = false`），不影响 Gitee 主库。积压的 commit 会在下次推送时一起补上去，不会丢。
+- **GitHub 走 SSH 而非 HTTPS**：本机 `github.com` 的 HTTPS 直连被阻断（`Connection reset`），只有 22 端口通。主机指纹 `SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU` 已与官方核对一致。
 - **不做压缩包归档**：日均正文 3 KB，git 历史十年不足 30 MB，远低于平台限额。若将来接入影像/大文件输出，再启用按月打包 + 本地容量管控。

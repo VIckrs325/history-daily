@@ -35,3 +35,10 @@ git checkout <commit> -- 历史上的今天-2026-08-06.md
 ## 更新方式
 
 由本机每日定时任务在正文生成后自动提交推送，详见 [`_ops/README.md`](_ops/README.md)。
+
+## 镜像
+
+同一份内容同时托管在两处，任意一处可独立访问：
+
+- Gitee：https://gitee.com/vickrs/history-daily
+- GitHub：https://github.com/VIckrs325/history-daily
