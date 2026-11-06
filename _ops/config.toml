@@ -1,0 +1,64 @@
+# ============================================================
+# 每日同步配置 —— 每个参数都有注释，按需修改
+# 敏感信息（令牌）不进本文件，由 Windows 凭据管理器保存
+# ============================================================
+
+[repo]
+# 提交信息模板，{date} 会被替换成 YYYY-MM-DD
+commit_message = "update: {date} 每日数据更新"
+# 推送分支
+branch = "main"
+
+
+[git]
+# git.exe 绝对路径。留空 = 自动探测（先查 PATH，再查 WorkBuddy 内置 PortableGit，
+# 最后查 Program Files\Git）。本机 git 没进系统 PATH，自动探测能兜住，
+# 但若 WorkBuddy 升级后目录变了导致探测失败，就在这里写死：
+#   executable = "C:\\Users\\ck108\\.workbuddy\\binaries\\PortableGit\\versions\\1.3.0\\cmd\\git.exe"
+executable = ""
+
+
+[include]
+# 白名单：只有这里列出的路径才会被 git add，其余文件一律不入库。
+# 支持 glob 通配符；被 .gitignore 命中的文件即使写在这里也会被跳过（双闸门）。
+paths = [
+    "历史上的今天-*.md",
+    "README.md",
+    ".gitignore",
+    "_ops/config.toml",
+    "_ops/sync.py",
+    "_ops/README.md",
+]
+
+
+# ---------------- 远端 1：Gitee 主库 ----------------
+[[remotes]]
+name    = "gitee"
+# Gitee 实际地址
+url     = "https://gitee.com/vickrs/history-daily.git"
+enabled = true
+# 代理：空字符串 = 强制直连。实测本机 Gitee 直连 1.6s 可用，保持为空即可。
+proxy   = ""
+# true  = 推失败算本次失败，会重试并记 ERROR
+# false = 推失败只记 WARN，不重试（用于镜像库）
+required = true
+
+
+# ---------------- 远端 2：GitHub 镜像 ----------------
+[[remotes]]
+name    = "github"
+url     = "https://github.com/REPLACE_ME/history-daily.git"
+# 当前网络 github.com 直连被阻断、WorkBuddy 代理端口已失效，故默认关闭。
+# 等有稳定代理/VPN 后：enabled 改 true，并把 proxy 填上本地代理地址。
+enabled = false
+proxy   = "http://127.0.0.1:7890"
+required = false
+
+
+[sync]
+# push 失败后的重试次数
+retries = 2
+# 每次重试前等待秒数（列表长度需 >= retries）
+retry_backoff_seconds = [5, 15]
+# 单条 git 命令超时（秒）
+timeout = 120
