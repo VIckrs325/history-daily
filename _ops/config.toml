@@ -52,11 +52,10 @@ required = true
 # ---------------- 远端 2：GitHub 镜像 ----------------
 [[remotes]]
 name    = "github"
-# SSH 可达（22 端口通，主机指纹已核验），但当前这把公钥还没加到 GitHub 账号上，
-# 所以认证会报 Permission denied (publickey)，先保持关闭。
-# 把 ~/.ssh/id_ed25519.pub 加到 https://github.com/settings/keys 后，
-# 把下面的 REPLACE_ME 换成你的 GitHub 用户名，再把 enabled 改 true 即可。
-url     = "git@github.com:REPLACE_ME/history-daily.git"
+# SSH 认证已打通：实测返回 "Hi VIckrs325! You've successfully authenticated"。
+# 注意 GitHub 用户名是 VIckrs325（大写 I），不是 Vickrs。
+# 仓库建好后把 enabled 改为 true 即开始同步。
+url     = "git@github.com:VIckrs325/history-daily.git"
 enabled = false
 proxy   = ""
 required = false
