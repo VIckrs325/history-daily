@@ -10,22 +10,22 @@
 
 ## 快速下载
 
-部分文件若网页端暂时无法在线预览，可用下面任一入口直接获取完整内容（内容完整，仅在线预览受限）：
+内容完整，仅在线预览受限。**推荐直接用 Gitee 整包下载——整个仓库不到 400 KB，几秒就下完，一次拿到全部历史。**
 
-> 提示：若 Gitee 网页端打不开某一篇（平台展示限制），请改用下方 GitHub 直链；整包 ZIP 与 `git clone` 不受影响。
-
-- **一键获取最新一期（自动指向当天最新，无需改日期）**
-  - https://github.com/VIckrs325/history-daily/raw/main/latest.md
-- **整包下载（全部最新内容，ZIP）**
-  - GitHub：https://github.com/VIckrs325/history-daily/archive/refs/heads/main.zip
+- **① 整包下载（推荐，含全部内容，< 400 KB）**
   - Gitee：https://gitee.com/vickrs/history-daily/repository/archive/main.zip
-- **单篇下载**（把 `YYYY-MM-DD` 换成日期）
+  - GitHub：https://github.com/VIckrs325/history-daily/archive/refs/heads/main.zip
+- **② 一键获取最新一期（在线看/另存，无需改日期）**
+  - https://github.com/VIckrs325/history-daily/raw/main/latest.md
+- **③ 单篇（历史某天，把 `YYYY-MM-DD` 换成日期）**
   - https://github.com/VIckrs325/history-daily/raw/main/历史上的今天-YYYY-MM-DD.md
 - **git 克隆**
 
 ```bash
 git clone https://github.com/VIckrs325/history-daily.git
 ```
+
+> 说明：Gitee 网页端个别文件可能无法在线预览（平台展示限制），单篇请用上方 GitHub 直链；整包 ZIP 与 `git clone` 不受影响。
 
 ## 目录结构
 
