@@ -8,6 +8,21 @@
 
 内容以公开史料为依据，拒绝阴谋论、伪科学、都市传说类题材。
 
+## 快速下载
+
+部分文件若网页端暂时无法在线预览，可用下面任一入口直接获取完整内容（内容完整，仅在线预览受限）：
+
+- **整包下载（全部最新内容，ZIP）**
+  - GitHub：https://github.com/VIckrs325/history-daily/archive/refs/heads/main.zip
+  - Gitee：https://gitee.com/vickrs/history-daily/repository/archive/main.zip
+- **单篇下载**（把 `YYYY-MM-DD` 换成日期）
+  - https://github.com/VIckrs325/history-daily/raw/main/历史上的今天-YYYY-MM-DD.md
+- **git 克隆**
+
+```bash
+git clone https://github.com/VIckrs325/history-daily.git
+```
+
 ## 目录结构
 
 ```
