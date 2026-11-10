@@ -27,6 +27,7 @@ ssh_executable = "G:\\app\\Git\\usr\\bin\\ssh.exe"
 # 支持 glob 通配符；被 .gitignore 命中的文件即使写在这里也会被跳过（双闸门）。
 paths = [
     "历史上的今天-*.md",
+    "latest.md",
     "README.md",
     "LICENSE",
     ".gitignore",

@@ -12,6 +12,8 @@
 
 部分文件若网页端暂时无法在线预览，可用下面任一入口直接获取完整内容（内容完整，仅在线预览受限）：
 
+- **一键获取最新一期（自动指向当天最新，无需改日期）**
+  - https://github.com/VIckrs325/history-daily/raw/main/latest.md
 - **整包下载（全部最新内容，ZIP）**
   - GitHub：https://github.com/VIckrs325/history-daily/archive/refs/heads/main.zip
   - Gitee：https://gitee.com/vickrs/history-daily/repository/archive/main.zip

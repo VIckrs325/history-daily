@@ -254,6 +254,28 @@ def push_remote(r, branch, cfg, fh):
     return False
 
 
+def refresh_latest(fh=None):
+    """把最新一期 历史上的今天-*.md 复制为 latest.md。
+
+    目的：给仓库提供一个固定不变的下载入口，内容始终等于最新一期。
+    文件名 YYYY-MM-DD 的字典序即时间序，取排序最后一个即为最新。
+    仅当内容变化时才写入，避免无意义提交；失败只记日志，不影响主流程。
+    """
+    try:
+        files = sorted(ROOT.glob("历史上的今天-*.md"))
+        if not files:
+            return
+        newest = files[-1]
+        dst = ROOT / "latest.md"
+        src_text = newest.read_text(encoding="utf-8")
+        if dst.exists() and dst.read_text(encoding="utf-8") == src_text:
+            return
+        dst.write_text(src_text, encoding="utf-8")
+        log("已刷新 latest.md <- {}".format(newest.name), fh)
+    except Exception as e:
+        log("刷新 latest.md 失败（忽略）：{}".format(e), fh)
+
+
 def run(fh):
     global GIT_BIN, SSH_BIN
 
@@ -276,6 +298,9 @@ def run(fh):
 
     branch = cfg["repo"].get("branch", "main")
     msg_tpl = cfg["repo"].get("commit_message", "update: {date} 每日数据更新")
+
+    # --- 0.5 刷新 latest.md：始终指向最新一期，供"一键下载最新"入口使用 ---
+    refresh_latest(fh)
 
     # --- 1. 白名单展开 ---
     targets, skipped = collect_targets(cfg)
